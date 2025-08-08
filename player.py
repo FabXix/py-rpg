@@ -103,74 +103,65 @@ class Player:
                     self.abilities.append(ability)
                     print(f"{self.name} learned {ability.name}!")           
 
-    # I'll change this so that the player can use also abilities that can heal or buff
-    # but for now, it will only use abilities that deal damage
-    def use_ability(self, ability_name):
+    # Refectored use_ability method so that it uses the parameter target, so that it can be used by both player and enemy
+    # allowing more flexibility in the combat system.
+    def use_ability(self, ability_name, target=None):
         ability = next((a for a in self.abilities if a.name == ability_name), None)
-        if ability and self.atual_mana >= ability.mana_cost and ability.type == "damage":
-            self.atual_mana -= ability.mana_cost
-            print(f"{self.name} used {ability.name}!")
+        
+        if not ability or self.atual_mana < ability.mana_cost:
+            print(f"{self.name} cannot use {ability_name}. Not enough mana or ability not found.")
+            return
+
+        self.atual_mana -= ability.mana_cost
+        print(f"{self.name} used {ability.name}!")
+
+        if ability.type == "damage" and target:
+            base_damage = ability.damage
             if ability.element == "ice":
-                ability.damage *= self.ice_dmg
+                base_damage *= self.ice_dmg
             elif ability.element == "fire":
-                ability.damage *= self.fire_dmg
+                base_damage *= self.fire_dmg
             elif ability.element == "water":
-                ability.damage *= self.water_dmg
+                base_damage *= self.water_dmg
             elif ability.element == "earth":
-                ability.damage *= self.earth_dmg
-            print(f"Damage: {ability.damage}, Element: {ability.element}")
-            return ability.damage, ability.element
-        elif ability and self.atual_mana >= ability.mana_cost and ability.type == "heal":
-            self.atual_mana -= ability.mana_cost
-            heal_amount = ability.damage    # Assuming damage is used for healing amount
+                base_damage *= self.earth_dmg
+
+            target.receive_damage(base_damage, ability.element)
+            print(f"Dealt {base_damage} {ability.element} damage to {target.name}.")
+
+        elif ability.type == "heal":
+            heal_amount = ability.damage
             self.atual_hp += heal_amount
             if self.atual_hp > self.hp:
                 self.atual_hp = self.hp
-            print(f"{self.name} used {ability.name} and healed {heal_amount} HP!")
-            return 0, None  
-        elif ability and self.atual_mana >= ability.mana_cost and ability.type == "buff":
-            self.atual_mana -= ability.mana_cost
+            print(f"{self.name} healed for {heal_amount} HP. Current HP: {self.atual_hp}")
+
+        elif ability.type == "buff":
             if ability.element == "shield":
                 self.earth_res += ability.damage
                 self.fire_res += ability.damage
                 self.water_res += ability.damage
                 self.ice_res += ability.damage  
-                print(f"{self.name} used {ability.name} and gained a shield of {ability.damage}!")
+                print(f"{self.name} gained a shield of {ability.damage} to all resistances.")
             elif ability.element == "mana":
                 self.atual_mana += ability.damage
                 if self.atual_mana > self.mana:
                     self.atual_mana = self.mana
-            print(f"{self.name} used {ability.name} and gained {ability.damage} mana!")
-            return 0, None
-        elif ability and self.atual_mana >= ability.mana_cost and ability.type == "effect":
-            if ability.element == "poison":
+                print(f"{self.name} recovered {ability.damage} mana. Current mana: {self.atual_mana}")
+
+        elif ability.type == "effect":
+            if ability.element == "poison" and target:
                 poison_damage = ability.damage
-                self.active_effects["poison"] = (poison_damage, 3)
-                self.atual_mana -= ability.mana_cost
-                print(f"{self.name} used {ability.name} and poisoned the enemy for {poison_damage} damage over 3 turns!")
-                return "poison", poison_damage
-    
+                target.active_effects["poison"] = (poison_damage, 3)
+                print(f"{self.name} poisoned {target.name} for {poison_damage} over 3 turns.")
+            elif ability.element == "heal":
+                hot_amount = ability.damage
+                self.active_effects["heal"] = (hot_amount, 3)
+                print(f"{self.name} will heal {hot_amount} over 3 turns.")
+
         else:
-            print(f"{self.name} cannot use {ability_name}. Not enough mana or ability not found.")
-            return 0, None
-        
-    def receive_damage(self, damage, element):
-        if element == "ice":
-            damage -= self.ice_res
-        elif element == "fire":
-            damage -= self.fire_res
-        elif element == "water":
-            damage -= self.water_res    
-        elif element == "earth":
-            damage -= self.earth_res
-        if damage < 0:  
-            damage = 0
-        self.atual_hp -= damage
-        if self.atual_hp < 0:
-            self.atual_hp = 0
-        print(f"{self.name} received {damage} damage. Current HP: {self.atual_hp}")
-        if self.atual_hp <= 0:
-            print(f"{self.name} has been defeated!")
+            print(f"{self.name} used {ability.name}, but nothing happened.")
+    
     def check_effects(self):
         if "heal" in self.active_effects and self.active_effects["heal"][1] > 0:
             heal_amount, turns = self.active_effects["heal"]
@@ -187,3 +178,22 @@ class Player:
             self.active_effects["poison"] = (poison_damage, turns - 1)
             print(f"{self.name} took {poison_damage} poison damage. Current HP: {self.atual_hp}")
 
+    def receive_damage(self, damage, element):
+        if element == "ice":
+            damage -= self.ice_res
+        elif element == "fire":
+            damage -= self.fire_res
+        elif element == "water":
+            damage -= self.water_res
+        elif element == "earth":
+            damage -= self.earth_res
+        if damage < 0:
+            damage = 0
+        self.atual_hp -= damage
+        if self.atual_hp < 0:
+            self.atual_hp = 0
+        print(f"{self.name} received {damage} {element} damage. Current HP: {self.atual_hp}")
+        if self.atual_hp <= 0:
+            print(f"{self.name} has been defeated!")
+
+            

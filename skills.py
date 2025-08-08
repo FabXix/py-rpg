@@ -15,4 +15,5 @@ Skills = [
     Skill ("Healing Light", "A warm light that heals wounds", 15, 20, "light", "heal"),
     Skill ("Mana Boost", "A surge of mana that replenishes energy", 10, 0, "mana", "heal"),
     Skill("Poison Cloud", "A toxic cloud that poisons enemies", 15, 10, "poison", "effect"),
+    Skill("Healing Clockwork", "A mechanical device that heals over time", 20, 5, "heal", "effect"),
 ]
