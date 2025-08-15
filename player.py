@@ -31,16 +31,16 @@ class Player:
         self.fire_dmg = 1
         self.water_dmg = 1
         self.earth_dmg = 1
-        self.hp_regen = self.vit * 0.1
-        self.mana_regen = self.int * 0.1
+        self.hp_regen = self.vit * 0.5
+        self.mana_regen = self.int * 0.5
         self.is_bot = is_bot
         self.active_effects = {"heal": (0,0), "poison": (0 , 0)} # heal: (dmg, turns), poison: (dmg, turns)
         self.inmunities = {"fire": 0, "ice": 0, "water": 0, "earth": 0}
     def recalculate_stats(self):
       self.hp = 100 + self.vit * 10
       self.mana = 50 + self.int * 5
-      self.hp_regen = self.vit * 0.1
-      self.mana_regen = self.int * 0.1
+      self.hp_regen = self.vit *0.5
+      self.mana_regen = self.int * 0.5
       self.ice_res = self.vit * 0.1
       self.fire_res = self.vit * 0.1
       self.water_res = self.vit * 0.1
@@ -86,14 +86,14 @@ class Player:
                 rounds -= 1
 
 
-    def use_ability(self, ability_name, target=None):
+    def use_ability(self, ability_name, double_hit=False ,target=None):
         ability = next((a for a in self.abilities if a.name == ability_name), None)
         
-        if not ability or self.actual_mana < ability.mana_cost:
+        if not ability or (self.actual_mana < ability.mana_cost and double_hit == False):
             print(f"{self.name} cannot use {ability_name}. Not enough mana or ability not found.")
             return
-
-        self.actual_mana -= ability.mana_cost
+        if double_hit == False:
+            self.actual_mana -= ability.mana_cost
         print(f"{self.name} used {ability.name}!")
 
         if ability.type == "damage" and target:
@@ -173,20 +173,20 @@ class Player:
             self.actual_hp = 0
         print(f"{self.name} received {damage} {element} damage. Current HP: {self.actual_hp}")
         if damager:
-            damager.xp += int(damage * 0.1) 
+            damager.xp += int(damage) 
             damager.check_hit_luck(damage)
 
         
         if self.actual_hp <= 0:
-            print(f"{self.name} has been defeated by {damager.name}!")
-            self.give_random_skill(damager, 3)
+            if damager:
+                print(f"{self.name} has been defeated by {damager.name}!")
+                self.give_random_skill(damager, 3)
+            else:
+                print(f"{self.name} has been defeated!!")
         return damage
 
     def check_level_up(self):
         if self.xp >= self.xp_to_next_level:
-            self.level += 1
-            self.xp -= self.xp_to_next_level
-            self.xp_to_next_level = int(self.xp_to_next_level * 1.1)
             self.level_up()
 
     def level_up(self):
@@ -195,7 +195,8 @@ class Player:
         self.vit += 5
         self.int += 5
         self.dex += 5
-        self.luck += 0.1
+        self.luck += 0.5
+        self.level += 1
         print(f"{self.name} leveled up! Now at level {self.level}.")
         self.recalculate_stats()
         
@@ -248,6 +249,17 @@ class Player:
         for _ in range(hits):
             if random.random() < self.luck:
                 self.give_random_skill(self, 1)
+
+    def check_double_hit(self,  ability):
+        if self.mana < ability.mana_cost:
+            return 0 
+        hits = int(ability.damage // 10)
+        landed = 1
+        for _ in range(hits):
+            if random.random() < self.dex * 0.1:
+                landed += 1
+        return landed
+                
     
     def print_stats(self):
         print(f"\n{self.name} stats:")
