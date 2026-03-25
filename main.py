@@ -1,7 +1,7 @@
 import random
 from skills import Skill
 from player import Player
-
+from player_data import *
 
 # -----------------------
 # Utility Functions
@@ -66,7 +66,7 @@ def generate_random_event_player(player):
     }
 
     print(f"{player.name} is trying to trigger a random event...")
-    if random.randint(1, 10) <= 10:  # 100% chance for testing
+    if random.randint(1, 10) <= 1:  # 10% chance for testing
         event_type = random.choice(list(events.keys()))
         print(f"{player.name} {events[event_type]}")
 
@@ -121,15 +121,29 @@ def enemy_attack(enemy, players, enemies ,event_cooldown, is_boss=False):
 # Main Game Loop
 # -----------------------
 
+
 def main():
     boss_names = {"Goblin King", "Dragon Lord", "Necromancer", "Dark Knight"}
     rounds = 3
-    event_cooldown = 0
+    event_cooldown = 5
+    conn = try_connection()
+    init_data(conn)
+    players = get_players(conn)
+    if players:
+        print("Existing players:")
+        for name, level in players:
+            print(f"- {name} (Lv.{level})")
 
-    # Player setup
     player_name = input("Enter your name: ")
-    player = Player(player_name, is_bot=False)
-    player.ability_selector(rounds)
+    player = load_player(conn, player_name)
+
+    if player:
+        print(f"Loaded existing player: {player.name} (Level {player.level})")
+    else:
+        print("Creating new player...")
+        player = Player(player_name, is_bot=False)
+        player.ability_selector(rounds)
+        save_player(conn, player)
 
     # Enemies setup
     num_enemies = int(input("How many enemies do you want to fight? "))
@@ -191,6 +205,8 @@ def main():
         # Win/Loss conditions
         if player.actual_hp <= 0:
             print("Game Over! You have been defeated.")
+            player.level = max(1, int(player.level * 0.5))
+            save_player(conn, player)
             break
         if all(e.actual_hp <= 0 for e in enemies):
             print("Victory! All enemies defeated.")
@@ -213,6 +229,7 @@ def main():
 
         # Regen phase
         regen(player)
+        save_player(conn, player)
 
 
 

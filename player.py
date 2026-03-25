@@ -15,7 +15,7 @@ class Player:
         self.xp = 0
         self.xp_to_next_level = 100
         self.name = name
-        self.vit = 5
+        self.vit = 20
         self.int = 5
         self.dex = 5
         self.luck = 0.1
@@ -109,7 +109,7 @@ class Player:
             target.receive_damage(base_damage, ability.element, self)
 
         elif ability.type == "heal":
-            heal_amount = ability.damage
+            heal_amount = ability.damage * self.level
             self.actual_hp += heal_amount
             if self.actual_hp > self.hp:
                 self.actual_hp = self.hp
@@ -123,18 +123,18 @@ class Player:
                 self.ice_res += ability.damage  
                 print(f"{self.name} gained a shield of {ability.damage} to all resistances.")
             elif ability.element == "mana":
-                self.actual_mana += ability.damage
+                self.actual_mana += ability.damage * self.level
                 if self.actual_mana > self.mana:
                     self.actual_mana = self.mana
                 print(f"{self.name} recovered {ability.damage} mana. Current mana: {self.actual_mana}")
 
         elif ability.type == "effect":
             if ability.element == "poison" and target:
-                poison_damage = ability.damage
+                poison_damage = ability.damage * self.level
                 target.active_effects["poison"] = (poison_damage, 3)
                 print(f"{self.name} poisoned {target.name} for {poison_damage} over 3 turns.")
             elif ability.element == "heal":
-                hot_amount = ability.damage
+                hot_amount = ability.damage * self.level
                 self.active_effects["heal"] = (hot_amount, 3)
                 print(f"{self.name} will heal {hot_amount} over 3 turns.")
 
@@ -144,14 +144,14 @@ class Player:
     def check_effects(self):
         if "heal" in self.active_effects and self.active_effects["heal"][1] > 0 and self.actual_hp < self.hp:
             heal_amount, turns = self.active_effects["heal"]
-            self.actual_hp += heal_amount
+            self.actual_hp += heal_amount * self.level
             if self.actual_hp > self.hp:
                 self.actual_hp = self.hp
             self.active_effects["heal"] = (heal_amount, turns - 1)
             print(f"{self.name} healed for {heal_amount} HP. Current HP: {self.actual_hp}")
         if "poison" in self.active_effects and self.active_effects["poison"][1] > 0:
             poison_damage, turns = self.active_effects["poison"]
-            self.actual_hp -= poison_damage
+            self.actual_hp -= poison_damage 
             if self.actual_hp < 0:
                 self.actual_hp = 0
             self.active_effects["poison"] = (poison_damage, turns - 1)
@@ -159,13 +159,13 @@ class Player:
 
     def receive_damage(self, damage, element, damager):
         if element == "ice":
-            damage -= self.ice_res
+            damage -= self.ice_res * self.level
         elif element == "fire":
-            damage -= self.fire_res
+            damage -= self.fire_res * self.level
         elif element == "water":
-            damage -= self.water_res
+            damage -= self.water_res * self.level
         elif element == "earth":
-            damage -= self.earth_res
+            damage -= self.earth_res * self.level
         if damage < 0:
             damage = 0
         self.actual_hp -= damage
