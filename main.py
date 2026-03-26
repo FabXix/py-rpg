@@ -21,7 +21,6 @@ def choose_target(enemies):
             pass
         print("Invalid choice. Try again.")
 
-
 def regen(player):
     """Regenerate HP and Mana each turn."""
     player.actual_mana = min(player.mana, player.actual_mana + player.mana_regen)
@@ -133,12 +132,15 @@ def main():
         print("Existing players:")
         for name, level in players:
             print(f"- {name} (Lv.{level})")
-
+    print("'x' to exit.")
     player_name = input("Enter your name: ")
+    if player_name == "x":
+        return
     player = load_player(conn, player_name)
 
     if player:
         print(f"Loaded existing player: {player.name} (Level {player.level})")
+        player.ability_selector(rounds)
     else:
         print("Creating new player...")
         player = Player(player_name, is_bot=False)
@@ -207,10 +209,10 @@ def main():
             print("Game Over! You have been defeated.")
             player.level = max(1, int(player.level * 0.5))
             save_player(conn, player)
-            break
+            main()
         if all(e.actual_hp <= 0 for e in enemies):
             print("Victory! All enemies defeated.")
-            break
+            main()
         # Level up checks
         player.check_level_up()
         for enemy in enemies[:]:
