@@ -125,19 +125,24 @@ def main():
     boss_names = {"Goblin King", "Dragon Lord", "Necromancer", "Dark Knight"}
     rounds = 3
     event_cooldown = 5
-    conn = try_connection()
-    init_data(conn)
-    players = get_players(conn)
-    if players:
-        print("Existing players:")
-        for name, level in players:
-            print(f"- {name} (Lv.{level})")
+    local = False
+    try:
+        conn = try_connection()
+        init_data(conn)
+        players = get_players(conn)
+        if players:
+            print("Existing players:")
+            for name, level in players:
+                print(f"- {name} (Lv.{level})")
+    except Exception as e:
+        print("Playing locally due to database connection error:", e)
+        local = True
     print("'x' to exit.")
     player_name = input("Enter your name: ")
     if player_name == "x":
         return
-    player = load_player(conn, player_name)
-
+    if local == False: player = load_player(conn, player_name)
+    else: player = Player(player_name, is_bot=False)
     if player:
         print(f"Loaded existing player: {player.name} (Level {player.level})")
         player.ability_selector(rounds)
@@ -208,7 +213,7 @@ def main():
         if player.actual_hp <= 0:
             print("Game Over! You have been defeated.")
             player.level = max(1, int(player.level * 0.5))
-            save_player(conn, player)
+            if local == False: save_player(conn, player)
             main()
         if all(e.actual_hp <= 0 for e in enemies):
             print("Victory! All enemies defeated.")
@@ -231,7 +236,7 @@ def main():
 
         # Regen phase
         regen(player)
-        save_player(conn, player)
+        if local == False: save_player(conn, player)
 
 
 
