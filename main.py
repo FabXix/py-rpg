@@ -122,6 +122,7 @@ def enemy_attack(enemy, players, enemies ,event_cooldown, is_boss=False):
 
 
 def main():
+    
     boss_names = {"Goblin King", "Dragon Lord", "Necromancer", "Dark Knight"}
     rounds = 3
     event_cooldown = 5
